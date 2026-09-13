@@ -1,0 +1,350 @@
+/* Estilos de VisionStudio (interfaz clara y extensible). */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #0f1420;
+  color: #e6e9f0;
+}
+
+.vs-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* --- Barra de herramientas ------------------------------------------------- */
+.vs-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #161c2c;
+  border-bottom: 1px solid #232b40;
+}
+
+.vs-toolbar-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.vs-toolbar button,
+.vs-small-button {
+  background: #222b44;
+  color: #e6e9f0;
+  border: 1px solid #35405f;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.vs-toolbar button:hover:not(:disabled),
+.vs-small-button:hover {
+  background: #2c3a5e;
+}
+
+.vs-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* --- Cuerpo principal ------------------------------------------------------- */
+.vs-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.vs-panel {
+  background: #161c2c;
+  border: 1px solid #232b40;
+  border-radius: 8px;
+  padding: 10px;
+  overflow: auto;
+}
+
+.vs-panel-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9aa7c2;
+}
+
+.vs-panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vs-muted {
+  color: #8a94ad;
+  font-size: 12px;
+}
+
+/* --- Biblioteca ------------------------------------------------------------ */
+.vs-library {
+  width: 220px;
+  flex-shrink: 0;
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid #232b40;
+}
+
+.vs-library-category-title {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: #6fd3a0;
+  text-transform: uppercase;
+}
+
+.vs-library-item {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: #1e2740;
+  border: 1px solid #2c3757;
+  border-radius: 6px;
+  cursor: grab;
+  font-size: 13px;
+}
+
+.vs-library-item:hover {
+  border-color: #6fd3a0;
+}
+
+/* --- Lienzo ----------------------------------------------------------------- */
+.vs-canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+.vs-node {
+  position: relative; /* las etiquetas de tipo absolutas quedan relativas al nodo */
+  min-width: 150px;
+  max-width: 220px;
+  background: #1b2338;
+  border: 1px solid #33405f;
+  border-radius: 8px;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.vs-node.is-selected {
+  border-color: #6fd3a0;
+  box-shadow: 0 0 0 2px rgba(111, 211, 160, 0.25);
+}
+
+.vs-node-header {
+  padding: 6px 8px;
+  font-weight: 600;
+  border-bottom: 1px solid #2a3450;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Color de cabecera por categoría. */
+.vs-node-source .vs-node-header { background: #2c3a5e; }
+.vs-node-control .vs-node-header { background: #5e3a2c; }
+.vs-node-processing .vs-node-header { background: #2c5e3a; }
+.vs-node-analysis .vs-node-header { background: #5e2c52; }
+.vs-node-output .vs-node-header { background: #3a2c5e; }
+
+.vs-node-body {
+  /* El padding horizontal deja sitio a las etiquetas de tipo de los puertos
+     (vs-port-type-in/out) para que no se solapen con el contenido (sinks). */
+  padding: 6px 30px;
+}
+
+/* Etiqueta de tipo de dato junto a cada puerto. Posición absoluta alineada
+   con su handle (mismo top%) vía estilo inline; se traduce verticalmente
+   para centrarla en el punto de conexión. */
+.vs-port-type {
+  position: absolute;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1;
+  color: #8a94ad;
+  background: #12182a;
+  border: 1px solid #2c3757;
+  border-radius: 4px;
+  padding: 2px 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.vs-port-type-in {
+  left: 5px;
+}
+
+.vs-port-type-out {
+  right: 5px;
+}
+
+.vs-sink-empty {
+  color: #8a94ad;
+  font-style: italic;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vs-sink-image {
+  width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #000;
+}
+
+.vs-sink-status {
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vs-sink-status.is-ok { background: #1d4a2c; color: #7ee2a6; }
+.vs-sink-status.is-nok { background: #4a1d1d; color: #ff9b9b; }
+
+.vs-sink-text {
+  color: #d7dce8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 30px;
+}
+
+/* --- Panel de propiedades --------------------------------------------------- */
+.vs-properties {
+  width: 240px;
+  flex-shrink: 0;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid #232b40;
+}
+
+.vs-node-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.vs-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.vs-param-label {
+  font-size: 12px;
+  color: #9aa7c2;
+}
+
+.vs-param input,
+.vs-param select {
+  background: #12182a;
+  color: #e6e9f0;
+  border: 1px solid #2c3757;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+.vs-param input:disabled,
+.vs-param select:disabled {
+  opacity: 0.5;
+}
+
+.vs-danger-button {
+  margin-top: 14px;
+  border-color: #7a3a3a !important;
+  color: #ff9b9b !important;
+}
+
+.vs-danger-button:hover {
+  background: #4a1d1d !important;
+}
+
+/* --- Errores ---------------------------------------------------------------- */
+.vs-errors {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  max-height: 140px;
+  flex-shrink: 0;
+}
+
+.vs-errors-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #ff9b9b;
+}
+
+.vs-error-code {
+  font-family: monospace;
+  background: #2a1f1f;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* --- Barra de estado --------------------------------------------------------- */
+.vs-statusbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  background: #161c2c;
+  border-top: 1px solid #232b40;
+}
+
+.vs-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.vs-status-dot.is-online { background: #3ddc84; }
+.vs-status-dot.is-offline { background: #e0533d; }
+
+.vs-status-sep {
+  color: #3a455f;
+}
+
+.vs-status-spacer {
+  flex: 1;
+}
+
+/* --- Minimap / controles de React Flow -------------------------------------- */
+.react-flow__controls button {
+  background: #1b2338;
+  border-bottom: 1px solid #2a3450;
+  color: #e6e9f0;
+}
+
+.react-flow__minimap {
+  background: #141a2a;
+}
