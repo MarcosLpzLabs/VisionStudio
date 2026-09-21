@@ -1,0 +1,29 @@
+# VisionStudio - reglas de exclusión versionadas.
+# Lo estrictamente personal/privado se excluye en .git/info/exclude.
+
+# Documentación de trabajo (no versionada)
+/AGENTS.md
+/Avance.md
+/Bugs.md
+/Fix.md
+/docs/AGENTES.md
+
+# graphify (grafo de conocimiento generado)
+/graphify-out/
+
+# Python
+__pycache__/
+*.py[cod]
+/backend/.venv/
+/.pytest_cache/
+/.ruff_cache/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+
+# Entorno local
+.env
+.DS_Store
+*.swp
