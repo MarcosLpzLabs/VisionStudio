@@ -117,6 +117,11 @@ def _validate_value(p: ParamSpec, value: Any) -> Optional[str]:
             return f"below_min:{p.min}"
         if p.max is not None and number > p.max:
             return f"above_max:{p.max}"
+        # Poka-yoke de paridad: hay parámetros que solo admiten enteros impares
+        # (p. ej. el núcleo de GaussianBlur). Se comprueba tras el rango para no
+        # enmascarar errores de límites.
+        if p.odd and int(number) % 2 == 0:
+            return "not_odd"
         return None
 
     if p.type == "boolean":

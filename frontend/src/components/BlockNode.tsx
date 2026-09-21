@@ -1,7 +1,7 @@
 // Nodo de bloque personalizado de React Flow.
 // Muestra el nombre del bloque (traducido), sus puertos de entrada/salida y,
 // en los sinks, el valor o imagen recibidos en tiempo real por WebSocket.
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
+import { Handle, NodeResizer, Position, type Node, type NodeProps } from '@xyflow/react'
 import { t } from '../i18n'
 import { useAppStore } from '../store/appStore'
 import type { BlockSpec, Language, PortSpec } from '../types'
@@ -99,12 +99,30 @@ function PortHandles({ spec }: { spec: BlockSpec }) {
 }
 
 export function BlockNode({ id, data, selected }: NodeProps<Node<BlockNodeData>>) {
-  const { blocksCatalog, language } = useAppStore()
+  const { blocksCatalog, language, flowState, resizeBlock, project } = useAppStore()
   const spec = findBlockSpec(blocksCatalog, data.blockType)
   const category = spec?.category ?? 'processing'
+  // Solo se redimensiona con el bloque seleccionado y el flujo detenido.
+  const resizable = selected && flowState === 'stopped'
+  // Si el bloque tiene tamaño persistido, la caja debe rellenar el nodo; si no,
+  // se dimensiona por contenido (comportamiento por defecto).
+  const block = project.blocks.find((b) => b.id === id)
+  const sized = block?.width != null || block?.height != null
 
   return (
-    <div className={`vs-node vs-node-${category} ${selected ? 'is-selected' : ''}`}>
+    <div
+      className={`vs-node vs-node-${category} ${selected ? 'is-selected' : ''} ${sized ? 'is-sized' : ''}`}
+    >
+      {/* Poka-yoke de tamaño: el usuario puede ajustar el bloque dentro de unos
+          límites razonables (ni microscópico ni enorme). Se persiste al soltar. */}
+      <NodeResizer
+        isVisible={resizable}
+        minWidth={140}
+        minHeight={60}
+        maxWidth={420}
+        maxHeight={420}
+        onResizeEnd={(_event, params) => resizeBlock(id, params.width, params.height)}
+      />
       <div className="vs-node-header">{t(language, spec?.name_key ?? data.blockType)}</div>
       <div className="vs-node-body">
         {spec?.category === 'output' && <SinkContent nodeId={id} />}

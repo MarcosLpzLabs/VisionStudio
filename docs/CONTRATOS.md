@@ -48,6 +48,13 @@ Campos de parámetro:
 - `type`: `number | boolean | string | select | color`
 - `default`, `min`, `max`, `step`, `options` (para `select`), `validation`
 - `required`
+- `odd`: si es `true`, el valor entero debe ser IMPAR (poka-yoke; p. ej. el
+  `kernel` del bloque Desenfoque). La UI solo permite impares y el registro
+  rechaza el resto con `ERR_PARAM_INVALID` (`not_odd`).
+
+> El tamaño de un bloque en el lienzo (`width`/`height`) es una propiedad de la
+> INSTANCIA en el proyecto (formato v2, `docs/FORMATO_PROYECTO.md`), no de la
+> especificación del bloque.
 
 Validaciones de conexión: el tipo de la salida debe ser compatible con el tipo de la
 entrada (tipos idénticos en el MVP; `frame` y `detections` permiten subtipos futuros).
@@ -125,6 +132,16 @@ entrada (tipos idénticos en el MVP; `frame` y `detections` permiten subtipos fu
 
 Cada error lleva `code` (estable) y `params` (diccionario serializable). El frontend
 traduce `code` y formatea con `params`.
+
+### Convención de `detail`
+
+El backend **no localiza textos**: cuando un error necesita explicar una causa,
+`params.detail` es una **clave estable**, no una frase. El frontend la traduce con
+`err.detail.<clave>` (p. ej. `kernel_odd`, `operator_unsupported`, `mode_unknown`,
+`no_executor`, `invalid_project`, `catalog`). Si `detail` no corresponde a ninguna
+clave conocida (p. ej. el texto de una excepción imprevista), se muestra tal cual
+como información técnica. Del mismo modo, el backend no genera nombres de bloques
+ni etiquetas: solo claves i18n (`name_key`, `description_key`, `label_key`).
 
 ## 5. Conexiones
 

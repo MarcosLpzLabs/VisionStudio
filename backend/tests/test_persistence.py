@@ -64,6 +64,30 @@ def test_project_from_dict_tolerante_con_campos_ausentes():
     assert graph.nodes == [] and graph.edges == []
 
 
+def test_migracion_v1_a_v2_anade_tamano_automatico():
+    # Un proyecto v1 (sin width/height) se migra a v2 con tamaño automático.
+    graph, meta = project_from_dict(proyecto_numerico(), None)
+    assert graph.node("n1").width is None
+    assert graph.node("n1").height is None
+    restored = project_to_dict(graph, meta)
+    assert restored["format_version"] == CURRENT_FORMAT_VERSION
+    assert all("width" in b and "height" in b for b in restored["blocks"])
+
+
+def test_round_trip_con_tamano_explicito():
+    # Un proyecto v2 con tamaño fijo lo conserva al guardar y cargar.
+    data = proyecto_numerico()
+    data["format_version"] = 2
+    data["blocks"][0]["width"] = 220
+    data["blocks"][0]["height"] = 90
+    graph, meta = project_from_dict(data, None)
+    assert graph.node("n1").width == 220
+    assert graph.node("n1").height == 90
+    restored = project_to_dict(graph, meta)
+    assert restored["blocks"][0]["width"] == 220
+    assert restored["blocks"][0]["height"] == 90
+
+
 # --- Rechazo de versiones --------------------------------------------------
 
 def test_rechaza_version_futura():

@@ -106,8 +106,9 @@ PYTHONPATH=backend backend/.venv/bin/pytest backend/tests
 
 ## Estado del proyecto
 
-- Fases 1-9 completadas: arquitectura y contratos, tipos y registro de bloques,
+- Fases 1-10 completadas: arquitectura y contratos, tipos y registro de bloques,
   motor de ejecución, cámara y runloop, bloques OpenCV, API + WebSocket, editor
-  visual, resto de bloques MVP, y persistencia con migraciones.
+  visual, resto de bloques MVP, persistencia con migraciones, e internacionalización
+  completa (es/en) con errores traducidos por código + parámetros.
 - La documentación técnica (arquitectura, contratos, plan, formato de proyecto)
   vive en el directorio `docs/`.

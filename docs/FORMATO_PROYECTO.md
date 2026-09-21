@@ -1,24 +1,24 @@
 # Formato de proyecto VisionStudio
 
-Fecha: 2026/09/13
-Estado: Aprobado (fase 9)
+Fecha: 2026/09/21
+Estado: Aprobado (fase 10, formato v2)
 Autor: Agent Architecture
 
 Un proyecto es un archivo JSON con versión de formato explícita. La versión
-actual es **1**. Este documento define el formato, las reglas de versionado y
+actual es **2**. Este documento define el formato, las reglas de versionado y
 el contrato de migraciones.
 
 ## 1. Estructura general
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "name": "proyecto",
   "language": "es",
   "camera": { "index": 0, "width": 640, "height": 480 },
   "flow": { "mode": "continuous", "interval_ms": 100 },
   "blocks": [
-    { "id": "n1", "type": "block.camera", "x": 0, "y": 0, "params": { "camera_index": 0 } }
+    { "id": "n1", "type": "block.camera", "x": 0, "y": 0, "width": null, "height": null, "params": { "camera_index": 0 } }
   ],
   "connections": [
     { "from": { "block": "n1", "port": "out" }, "to": { "block": "n2", "port": "in" } }
@@ -28,7 +28,7 @@ el contrato de migraciones.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `format_version` | `int` | Versión del formato (actual: 1). Obligatorio. |
+| `format_version` | `int` | Versión del formato (actual: 2). Obligatorio. |
 | `name` | `string` | Nombre del proyecto. Default `"Untitled"`. |
 | `language` | `string` | Idioma preferido (`es`/`en`). Default `"es"`. |
 | `camera` | `object` | Configuración de cámara por defecto (`index`, `width`, `height`). |
@@ -39,12 +39,15 @@ el contrato de migraciones.
 ## 2. Bloques
 
 ```json
-{ "id": "n1", "type": "block.grayscale", "x": 120, "y": 80, "params": {} }
+{ "id": "n1", "type": "block.grayscale", "x": 120, "y": 80, "width": null, "height": null, "params": {} }
 ```
 
 - `id`: identificador del nodo dentro del proyecto (único). Estable por archivo.
 - `type`: identificador ESTABLE del bloque (ver `docs/CONTRATOS.md` §3).
 - `x`, `y`: posición en el lienzo (float).
+- `width`, `height`: tamaño del bloque en el lienzo (float) o `null` para tamaño
+  automático (según el contenido). Introducidos en el formato v2; el usuario
+  puede redimensionar el bloque dentro de unos límites (140–420 px).
 - `params`: solo los parámetros MODIFICADOS por el usuario; los no presentes se
   completan con los valores por defecto del bloque al ejecutar.
 
@@ -84,20 +87,20 @@ el contrato de migraciones.
 | `ERR_PROJECT_VERSION_UNSUPPORTED` | `version` | Versión futura, ausente o no entera. |
 | `ERR_MIGRATION_FAILED` | `from_version`, `to_version`, `detail` | Migración ausente o fallida. |
 
-## 6. Ejemplo completo (formato v1)
+## 6. Ejemplo completo (formato v2)
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "name": "Grises con umbral",
   "language": "es",
   "camera": { "index": 0, "width": 640, "height": 480 },
   "flow": { "mode": "continuous", "interval_ms": 100 },
   "blocks": [
-    { "id": "cam", "type": "block.camera", "x": 20, "y": 60, "params": {} },
-    { "id": "gray", "type": "block.grayscale", "x": 220, "y": 60, "params": {} },
-    { "id": "thr", "type": "block.threshold", "x": 420, "y": 60, "params": { "threshold": 127 } },
-    { "id": "sink", "type": "block.sink_image", "x": 620, "y": 60, "params": {} }
+    { "id": "cam", "type": "block.camera", "x": 20, "y": 60, "width": null, "height": null, "params": {} },
+    { "id": "gray", "type": "block.grayscale", "x": 220, "y": 60, "width": 220, "height": 90, "params": {} },
+    { "id": "thr", "type": "block.threshold", "x": 420, "y": 60, "width": null, "height": null, "params": { "threshold": 127 } },
+    { "id": "sink", "type": "block.sink_image", "x": 620, "y": 60, "width": 300, "height": 260, "params": {} }
   ],
   "connections": [
     { "from": { "block": "cam", "port": "out" }, "to": { "block": "gray", "port": "in" } },
@@ -106,3 +109,10 @@ el contrato de migraciones.
   ]
 }
 ```
+
+## 7. Cambios por versión
+
+| Versión | Cambio | Migración |
+|---------|--------|-----------|
+| v1 | Formato inicial (bloques con posición y parámetros). | — |
+| v2 | Cada bloque incorpora `width`/`height` (tamaño en el lienzo; `null` = automático). | `migrate_v1_to_v2`: añade `width`/`height` como `null` a cada bloque. |

@@ -137,5 +137,16 @@
   "err.ERR_MIGRATION_FAILED": "Error migrating the project.",
   "err.ERR_COMMAND_UNKNOWN": "Unknown command: {command}.",
   "err.ERR_INTERNAL": "Internal error: {detail}.",
-  "err.generic": "Error: {code}."
+  "err.generic": "Error: {code}.",
+  "err.detail.no_frame": "the camera returned no frame",
+  "err.detail.no_executor": "the block has no executor",
+  "err.detail.source_did_not_produce": "the source produced no expected value",
+  "err.detail.kernel_odd": "the kernel must be odd and at least 1",
+  "err.detail.operator_unsupported": "unsupported operator",
+  "err.detail.mode_unknown": "unknown run mode",
+  "err.detail.duplicate_id": "duplicate block id",
+  "err.detail.invalid_project": "the project is not valid",
+  "err.detail.catalog": "could not load the block catalog",
+  "language.es": "Español",
+  "language.en": "English"
 }

@@ -136,7 +136,11 @@ explicativo.
 - Catálogos JSON en español e inglés (`es`, `en`).
 - Selector de idioma en la interfaz; el idioma preferido se guarda en el proyecto.
 - Los nombres/descripciones de bloques y las categorías se traducen con las mismas claves.
-- El backend puede devolver mensajes localizados o códigos; se prefiere **código + parámetros**.
+- El backend **no localiza**: solo emite `code` + `params` (y, cuando aplica, `detail`
+  como clave estable). El catálogo de traducción vive en el frontend
+  (`frontend/src/i18n`); `backend/visionstudio/i18n` no contiene textos.
+- El frontend traduce en el momento de renderizar (`translateError`), de modo que
+  cambiar de idioma re-traduce también el historial de errores.
 
 ## 9. Frontend
 

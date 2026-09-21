@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from visionstudio.api.controller import AppController
+from visionstudio.persistence.project import CURRENT_FORMAT_VERSION
 from tests.fakes import FakeCaptureFactory, synthetic_frame
 
 # Módulo real de la app (importlib evita el sombreado del atributo `app`,
@@ -100,7 +101,8 @@ def test_proyecto_roundtrip(client):
     test_client, _ = client
     assert test_client.put("/api/project", json=proyecto_numerico()).status_code == 200
     project = test_client.get("/api/project").json()
-    assert project["format_version"] == 1
+    # El guardado usa SIEMPRE la versión actual del backend (los v1 se migran).
+    assert project["format_version"] == CURRENT_FORMAT_VERSION
     assert len(project["blocks"]) == 3
     assert len(project["connections"]) == 2
 

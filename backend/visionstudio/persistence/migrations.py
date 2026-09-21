@@ -11,10 +11,9 @@ Reglas (docs/ARQUITECTURA.md §7 y docs/FORMATO_PROYECTO.md):
 - Si una migración falla (o no existe), se lanza ERR_MIGRATION_FAILED y el
   proyecto se rechaza: nunca se carga un archivo migrado a medias.
 
-La versión actual del formato es 1, por lo que el registro global va VACÍO en
-producción. Las migraciones reales (v1 -> v2, ...) se añadirán cuando el
-formato cambie. La infraestructura queda probada con migraciones ficticias en
-los tests.
+La versión actual del formato es 2. La migración real v1 -> v2 (tamaño de
+bloque) está registrada en el registro global `MIGRATIONS`; el resto de la
+infraestructura sigue probada con migraciones ficticias en los tests.
 """
 
 from __future__ import annotations
@@ -103,6 +102,29 @@ def _assert_version(data: dict[str, Any], expected: int) -> dict[str, Any]:
     return data
 
 
-# Instancia global usada por la capa de persistencia (project.py). En
-# producción no hay migraciones (formato v1); los tests registran las suyas.
+# ===========================================================================
+# Migraciones reales
+# ===========================================================================
+
+def migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
+    """v1 -> v2: añade `width`/`height` (tamaño de bloque) a cada bloque.
+
+    En v1 los bloques solo tenían posición; en v2 pueden tener un tamaño fijo
+    en el lienzo. Los proyectos antiguos se migran con `null` (tamaño
+    automático), de modo que se ven igual que antes hasta que el usuario los
+    redimensione. Es una función pura: devuelve un dict NUEVO sin mutar `data`.
+    """
+    result = dict(data)
+    result["format_version"] = 2
+    result["blocks"] = [
+        # Copia cada bloque añadiendo las claves nuevas si faltan.
+        {**block, "width": block.get("width"), "height": block.get("height")}
+        for block in data.get("blocks", [])
+    ]
+    return result
+
+
+# Instancia global usada por la capa de persistencia (project.py). Registra las
+# migraciones reales entre versiones del formato.
 MIGRATIONS = MigrationRegistry()
+MIGRATIONS.register(1, 2, migrate_v1_to_v2)

@@ -140,7 +140,8 @@ class AppController:
             try:
                 pipeline.runloop.set_mode(RunMode(mode))
             except ValueError:
-                raise EngineError(ErrorCode.PARAM_INVALID, {"detail": f"modo desconocido: {mode}"})
+                # `detail` es una clave estable: el frontend la traduce con err.detail.*.
+                raise EngineError(ErrorCode.PARAM_INVALID, {"detail": "mode_unknown", "mode": mode})
         if interval_ms is not None:
             pipeline.runloop.set_interval_ms(interval_ms)
         pipeline.start()

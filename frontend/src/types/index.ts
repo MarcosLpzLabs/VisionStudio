@@ -27,6 +27,8 @@ export interface ParamSpec {
   step?: number
   options?: string[]
   required: boolean
+  // Poka-yoke: si es true, el valor entero debe ser impar (p. ej. kernel).
+  odd?: boolean
 }
 
 export interface BlockSpec {
@@ -50,6 +52,9 @@ export interface ProjectBlock {
   type: string
   x: number
   y: number
+  // Tamaño en el lienzo (formato v2). null/undefined = automático.
+  width?: number | null
+  height?: number | null
   params: Record<string, unknown>
 }
 
@@ -78,10 +83,11 @@ export interface SinkData {
 
 // --- Errores de la aplicación ---------------------------------------------
 
+// Error de la aplicación: código estable + parámetros. El texto se traduce en
+// el momento de renderizar (translateError), no se almacena congelado.
 export interface AppError {
   code: string
   params?: Record<string, unknown>
-  message: string
 }
 
 // --- Mensajes WebSocket ---------------------------------------------------

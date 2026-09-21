@@ -1,6 +1,7 @@
 // Panel de propiedades del bloque seleccionado.
 // Muestra la descripción y los parámetros editables según su tipo
 // (número, booleano, texto, select, color).
+import { useEffect, useState } from 'react'
 import { t } from '../i18n'
 import { useAppStore } from '../store/appStore'
 import { findBlockSpec } from '../utils/graph'
@@ -20,6 +21,66 @@ function hexToBgr(hex: string): number[] {
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return [b, g, r]
+}
+
+// Poka-yoke de paridad: si el parámetro exige impares (p. ej. kernel), un
+// valor par se ajusta al impar más cercano dentro de los límites.
+function snapOdd(param: ParamSpec, num: number): number {
+  if (!param.odd || param.kind !== 'int' || num % 2 !== 0) return num
+  const up = num + 1
+  const down = num - 1
+  // Se prefiere subir, salvo que supere el máximo.
+  if (param.max === undefined || up <= param.max) return up
+  return down
+}
+
+// Entrada numérica con estado de texto local: permite teclear con comodidad
+// (p. ej. "21") mientras se normaliza el valor (impar) que se guarda.
+function NumberParamInput({
+  param,
+  value,
+  onChange,
+  disabled,
+}: {
+  param: ParamSpec
+  value: unknown
+  onChange: (value: unknown) => void
+  disabled: boolean
+}) {
+  const [text, setText] = useState(value === undefined || value === null ? '' : String(value))
+  const [focused, setFocused] = useState(false)
+
+  // Sincroniza el texto con el valor externo (undo, cargar, etc.) salvo mientras
+  // el usuario escribe, para no pisar lo tecleado.
+  useEffect(() => {
+    if (!focused) setText(value === undefined || value === null ? '' : String(value))
+  }, [value, focused])
+
+  const commit = (raw: string) => {
+    const num = param.kind === 'int' ? parseInt(raw, 10) : parseFloat(raw)
+    if (Number.isNaN(num)) {
+      onChange('')
+      return
+    }
+    onChange(snapOdd(param, num))
+  }
+
+  return (
+    <input
+      type="number"
+      value={text}
+      min={param.min}
+      max={param.max}
+      step={param.step ?? (param.odd ? 2 : param.kind === 'int' ? 1 : 'any')}
+      disabled={disabled}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(event) => {
+        setText(event.target.value)
+        commit(event.target.value)
+      }}
+    />
+  )
 }
 
 function ParamInput({
@@ -68,18 +129,11 @@ function ParamInput({
       )
     case 'number':
       return (
-        <input
-          type="number"
-          value={value === undefined || value === null ? '' : String(value)}
-          min={param.min}
-          max={param.max}
-          step={param.step ?? (param.kind === 'int' ? 1 : 'any')}
+        <NumberParamInput
+          param={param}
+          value={value}
+          onChange={onChange}
           disabled={disabled}
-          onChange={(event) => {
-            const text = event.target.value
-            const num = param.kind === 'int' ? parseInt(text, 10) : parseFloat(text)
-            onChange(Number.isNaN(num) ? '' : num)
-          }}
         />
       )
     default:

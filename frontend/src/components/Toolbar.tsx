@@ -82,7 +82,8 @@ export function Toolbar() {
       useAppStore.getState().clearSinkData()
       await sendProject(parsed)
     } catch {
-      addError('ERR_INTERNAL', { detail: 'Proyecto no válido' })
+      // `detail` es una clave estable traducida por translateError (err.detail.*).
+      addError('ERR_INTERNAL', { detail: 'invalid_project' })
     }
   }
 
@@ -141,8 +142,8 @@ export function Toolbar() {
               localStorage.setItem('vs-language', lang)
             }}
           >
-            <option value="es">Español</option>
-            <option value="en">English</option>
+            <option value="es">{t(language, 'language.es')}</option>
+            <option value="en">{t(language, 'language.en')}</option>
           </select>
         </label>
       </div>

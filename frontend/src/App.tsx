@@ -65,7 +65,8 @@ export function App() {
     // Catálogo de bloques para la biblioteca y la validación de conexiones.
     fetchBlocksCatalog()
       .then(setBlocksCatalog)
-      .catch(() => useAppStore.getState().addError('ERR_INTERNAL', { detail: 'catálogo' }))
+      // `detail` es una clave estable traducida por translateError (err.detail.*).
+      .catch(() => useAppStore.getState().addError('ERR_INTERNAL', { detail: 'catalog' }))
 
     // Estado inicial del flujo en el servidor.
     fetchFlowState()

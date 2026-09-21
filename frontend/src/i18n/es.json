@@ -137,5 +137,16 @@
   "err.ERR_MIGRATION_FAILED": "Error al migrar el proyecto.",
   "err.ERR_COMMAND_UNKNOWN": "Comando desconocido: {command}.",
   "err.ERR_INTERNAL": "Error interno: {detail}.",
-  "err.generic": "Error: {code}."
+  "err.generic": "Error: {code}.",
+  "err.detail.no_frame": "la cámara no entregó ningún frame",
+  "err.detail.no_executor": "el bloque no tiene ejecutor",
+  "err.detail.source_did_not_produce": "el origen no produjo el dato esperado",
+  "err.detail.kernel_odd": "el núcleo debe ser impar y mayor o igual que 1",
+  "err.detail.operator_unsupported": "operador no soportado",
+  "err.detail.mode_unknown": "modo de ejecución desconocido",
+  "err.detail.duplicate_id": "identificador de bloque duplicado",
+  "err.detail.invalid_project": "el proyecto no es válido",
+  "err.detail.catalog": "no se pudo cargar el catálogo de bloques",
+  "language.es": "Español",
+  "language.en": "English"
 }

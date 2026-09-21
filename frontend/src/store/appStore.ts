@@ -3,7 +3,6 @@
 // del flujo, conexión, datos de sinks, errores e historial de deshacer/rehacer.
 // No contiene lógica OpenCV.
 import { create } from 'zustand'
-import { t } from '../i18n'
 import type {
   AppError,
   BlockCatalog,
@@ -46,9 +45,11 @@ interface AppStore {
   canUndo: () => boolean
   canRedo: () => boolean
 
-  // selección en el lienzo
+  // selección en el lienzo (nodo y arista; permiten borrar con Supr)
   selectedNodeId: string | null
   setSelectedNodeId: (id: string | null) => void
+  selectedEdgeId: string | null
+  setSelectedEdgeId: (id: string | null) => void
 
   // estado del flujo y conexión
   flowState: FlowState
@@ -70,6 +71,7 @@ interface AppStore {
   addBlock: (type: string, x: number, y: number) => void
   removeBlock: (nodeId: string) => void
   moveBlock: (nodeId: string, x: number, y: number) => void
+  resizeBlock: (nodeId: string, width: number, height: number) => void
   updateBlockParams: (nodeId: string, params: Record<string, unknown>) => void
   addConnection: (
     fromBlock: string,
@@ -82,7 +84,7 @@ interface AppStore {
 
 function emptyProject(language: Language): Project {
   return {
-    format_version: 1,
+    format_version: 2,
     name: 'Untitled',
     language,
     camera: { index: 0, width: 640, height: 480 },
@@ -93,21 +95,22 @@ function emptyProject(language: Language): Project {
 }
 
 export const useAppStore = create<AppStore>((set, get) => {
-  // Estado del debounce de parámetros: recuerda el proyecto anterior al grupo
-  // de cambios para que, al expirar, se registre como un único paso de undo.
-  let paramsTimer: ReturnType<typeof setTimeout> | null = null
-  let paramsBeforeProject: Project | null = null
+  // Estado del debounce de cambios continuos (parámetros y redimensionado):
+  // recuerda el proyecto anterior al grupo para que, al expirar, se registre
+  // como un único paso de undo (una ráfaga de escritura = un solo deshacer).
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null
+  let pendingBeforeProject: Project | null = null
 
-  // Compromete el grupo pendiente de cambios de parámetros en el historial.
+  // Compromete el grupo pendiente de cambios continuos en el historial.
   // Se llama antes de cualquier otra mutación y antes de undo/redo para que el
   // grupo en curso no se pierda.
-  const flushParamsDebounce = () => {
-    if (paramsTimer === null || paramsBeforeProject === null) return
-    clearTimeout(paramsTimer)
-    paramsTimer = null
+  const flushPendingDebounce = () => {
+    if (pendingTimer === null || pendingBeforeProject === null) return
+    clearTimeout(pendingTimer)
+    pendingTimer = null
     const { history, future } = get()
-    set({ history: [...history, paramsBeforeProject].slice(-HISTORY_LIMIT), future })
-    paramsBeforeProject = null
+    set({ history: [...history, pendingBeforeProject].slice(-HISTORY_LIMIT), future })
+    pendingBeforeProject = null
   }
 
   // Registra `before` como el proyecto deshacible antes de una mutación y
@@ -117,13 +120,13 @@ export const useAppStore = create<AppStore>((set, get) => {
     return { history: [...history, before].slice(-HISTORY_LIMIT), future: [] }
   }
 
-  // Cancela cualquier debounce de parámetros pendiente (para cargas/resets).
-  const cancelParamsDebounce = () => {
-    if (paramsTimer !== null) {
-      clearTimeout(paramsTimer)
-      paramsTimer = null
+  // Cancela cualquier debounce pendiente (para cargas/resets).
+  const cancelPendingDebounce = () => {
+    if (pendingTimer !== null) {
+      clearTimeout(pendingTimer)
+      pendingTimer = null
     }
-    paramsBeforeProject = null
+    pendingBeforeProject = null
   }
 
   return {
@@ -138,11 +141,11 @@ export const useAppStore = create<AppStore>((set, get) => {
     project: emptyProject('es'),
     // Carga de proyecto (servidor/archivo): no genera entradas de historial.
     setProject: (project) => {
-      cancelParamsDebounce()
+      cancelPendingDebounce()
       set({ project, history: [], future: [] })
     },
     resetProject: () => {
-      cancelParamsDebounce()
+      cancelPendingDebounce()
       set({ project: emptyProject(get().language), history: [], future: [] })
     },
 
@@ -151,8 +154,8 @@ export const useAppStore = create<AppStore>((set, get) => {
     undo: () => {
       // Solo se deshace con el flujo detenido (grafo de solo lectura en ejecución).
       if (get().flowState !== 'stopped') return
-      // Compromete primero el grupo de parámetros pendiente.
-      flushParamsDebounce()
+      // Compromete primero el grupo continuo pendiente.
+      flushPendingDebounce()
       const state = get()
       if (state.history.length === 0) return
       const previous = state.history[state.history.length - 1]
@@ -163,6 +166,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         future: [state.project, ...state.future].slice(0, HISTORY_LIMIT),
         sinkData: {},
         selectedNodeId: selectedStillExists ? state.selectedNodeId : null,
+        // El historial puede no contener la arista seleccionada: se limpia.
+        selectedEdgeId: null,
       })
     },
     redo: () => {
@@ -177,6 +182,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         future: state.future.slice(1),
         sinkData: {},
         selectedNodeId: selectedStillExists ? state.selectedNodeId : null,
+        selectedEdgeId: null,
       })
     },
     canUndo: () => get().history.length > 0,
@@ -184,6 +190,8 @@ export const useAppStore = create<AppStore>((set, get) => {
 
     selectedNodeId: null,
     setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+    selectedEdgeId: null,
+    setSelectedEdgeId: (id) => set({ selectedEdgeId: id }),
 
     flowState: 'stopped',
     setFlowState: (state) => set({ flowState: state }),
@@ -197,8 +205,9 @@ export const useAppStore = create<AppStore>((set, get) => {
 
     errors: [],
     addError: (code, params) => {
-      const { language } = get()
-      const error: AppError = { code, params, message: t(language, `err.${code}`) ?? t(language, 'err.generic', { code }) }
+      // Se guardan código y parámetros: el texto se traduce al renderizar,
+      // de modo que el historial cambia de idioma con el selector.
+      const error: AppError = { code, params }
       // Se limita el historial para no saturar el panel.
       set((state) => ({ errors: [...state.errors, error].slice(-50) }))
     },
@@ -206,7 +215,7 @@ export const useAppStore = create<AppStore>((set, get) => {
 
     addBlock: (type, x, y) => {
       const state = get()
-      flushParamsDebounce()
+      flushPendingDebounce()
       const spec = findBlockSpec(state.blocksCatalog, type)
       if (!spec) return
       const id = newBlockId(type, state.project)
@@ -216,16 +225,19 @@ export const useAppStore = create<AppStore>((set, get) => {
           ...state.project,
           blocks: [
             ...state.project.blocks,
-            { id, type, x, y, params: defaultParams(spec) },
+            // width/height null = tamaño automático (el usuario puede ajustarlo).
+            { id, type, x, y, width: null, height: null, params: defaultParams(spec) },
           ],
         },
         selectedNodeId: id,
+        // Al seleccionar un bloque se deselecciona cualquier arista.
+        selectedEdgeId: null,
       })
     },
 
     removeBlock: (nodeId) => {
       const state = get()
-      flushParamsDebounce()
+      flushPendingDebounce()
       set({
         ...snapshot(state.project),
         project: {
@@ -236,6 +248,8 @@ export const useAppStore = create<AppStore>((set, get) => {
           ),
         },
         selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+        // Las aristas del bloque se eliminan con él: se limpia su selección.
+        selectedEdgeId: null,
       })
     },
 
@@ -244,7 +258,7 @@ export const useAppStore = create<AppStore>((set, get) => {
       // Solo se registra si la posición cambió de verdad (fin de arrastre).
       const current = state.project.blocks.find((b) => b.id === nodeId)
       if (!current || (current.x === x && current.y === y)) return
-      flushParamsDebounce()
+      flushPendingDebounce()
       set({
         ...snapshot(state.project),
         project: {
@@ -256,12 +270,37 @@ export const useAppStore = create<AppStore>((set, get) => {
       })
     },
 
+    resizeBlock: (nodeId, width, height) => {
+      const state = get()
+      const current = state.project.blocks.find((b) => b.id === nodeId)
+      if (!current) return
+      // Se redondea para no guardar decimales de píxeles.
+      const w = Math.round(width)
+      const h = Math.round(height)
+      if (current.width === w && current.height === h) return
+      // Igual que los parámetros: una ráfaga de resize = un único paso de undo.
+      if (pendingTimer === null) {
+        pendingBeforeProject = state.project
+      }
+      const nextProject = {
+        ...state.project,
+        blocks: state.project.blocks.map((b) =>
+          b.id === nodeId ? { ...b, width: w, height: h } : b,
+        ),
+      }
+      set({ project: nextProject, future: [] })
+      if (pendingTimer !== null) clearTimeout(pendingTimer)
+      pendingTimer = setTimeout(() => {
+        flushPendingDebounce()
+      }, PARAMS_DEBOUNCE_MS)
+    },
+
     updateBlockParams: (nodeId, params) => {
       const state = get()
       // Inicio de un grupo: recuerda el proyecto antes del primer cambio para
       // que todo el grupo sea un único paso de undo al expirar el debounce.
-      if (paramsTimer === null) {
-        paramsBeforeProject = state.project
+      if (pendingTimer === null) {
+        pendingBeforeProject = state.project
       }
       // Aplica el cambio al instante para que la UI responda en vivo.
       const nextProject = {
@@ -272,9 +311,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       }
       // Mientras el grupo esté pendiente se limpia el redo (nuevo historial).
       set({ project: nextProject, future: [] })
-      if (paramsTimer !== null) clearTimeout(paramsTimer)
-      paramsTimer = setTimeout(() => {
-        flushParamsDebounce()
+      if (pendingTimer !== null) clearTimeout(pendingTimer)
+      pendingTimer = setTimeout(() => {
+        flushPendingDebounce()
       }, PARAMS_DEBOUNCE_MS)
     },
 
@@ -300,14 +339,11 @@ export const useAppStore = create<AppStore>((set, get) => {
                 : 'ERR_GRAPH_CYCLE'
         return {
           ok: false,
-          error: {
-            code,
-            params: { to_block: toBlock, to_port: toPort },
-            message: t(state.language, `err.${code}`),
-          },
+          // Solo código + parámetros; el texto se traduce al mostrarlo.
+          error: { code, params: { to_block: toBlock, to_port: toPort } },
         }
       }
-      flushParamsDebounce()
+      flushPendingDebounce()
       set({
         ...snapshot(state.project),
         project: {
@@ -323,7 +359,7 @@ export const useAppStore = create<AppStore>((set, get) => {
 
     removeConnection: (fromBlock, fromPort, toBlock, toPort) => {
       const state = get()
-      flushParamsDebounce()
+      flushPendingDebounce()
       set({
         ...snapshot(state.project),
         project: {
@@ -338,6 +374,8 @@ export const useAppStore = create<AppStore>((set, get) => {
               ),
           ),
         },
+        // La arista borrada deja de existir: se limpia su selección.
+        selectedEdgeId: null,
       })
     },
   }

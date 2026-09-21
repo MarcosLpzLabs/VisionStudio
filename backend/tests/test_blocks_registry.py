@@ -103,6 +103,16 @@ def test_validate_params_entero():
     assert err is not None and "not_an_integer" in err
 
 
+def test_validate_params_impar_obligatorio():
+    # El núcleo de blur debe ser impar: 5 vale, 4 se rechaza con "not_odd".
+    assert registry.validate_params("block.blur", {"kernel": 5}) is None
+    err = registry.validate_params("block.blur", {"kernel": 4})
+    assert err is not None and "not_odd" in err
+    # El rango se comprueba antes que la paridad: 0 -> below_min (no not_odd).
+    err0 = registry.validate_params("block.blur", {"kernel": 0})
+    assert err0 is not None and "below_min" in err0
+
+
 def test_compatibilidad_conexiones():
     assert registry.compatible(ValueType.FRAME, "block.grayscale", "in")
     assert not registry.compatible(ValueType.NUMBER, "block.grayscale", "in")

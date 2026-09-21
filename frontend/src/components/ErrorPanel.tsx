@@ -1,6 +1,6 @@
 // Panel de errores: lista los errores de la aplicación con su mensaje
 // traducido y un botón para limpiar el historial.
-import { t } from '../i18n'
+import { t, translateError } from '../i18n'
 import { useAppStore } from '../store/appStore'
 
 export function ErrorPanel() {
@@ -22,7 +22,9 @@ export function ErrorPanel() {
         <ul className="vs-errors-list">
           {errors.map((error, index) => (
             <li key={`${index}-${error.code}`} className="vs-error-item">
-              <span className="vs-error-code">{error.code}</span> {error.message}
+              {/* Se traduce en el render para que el historial siga el idioma. */}
+              <span className="vs-error-code">{error.code}</span>{' '}
+              {translateError(language, error.code, error.params)}
             </li>
           ))}
         </ul>

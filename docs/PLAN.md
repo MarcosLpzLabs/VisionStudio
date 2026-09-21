@@ -1,7 +1,7 @@
 # Plan de desarrollo
 
 Fecha: 2026/09/13
-Estado: En curso (fase 10)
+Estado: En curso (fase 11)
 Fuente: Prompt maestro
 
 ## Reglas de avance
@@ -24,7 +24,7 @@ Fuente: Prompt maestro
 | 7 | Editor visual | Frontend React+TS+Vite+React Flow, biblioteca, lienzo, paneles, controles | **Completado** |
 | 8 | Resto de bloques MVP | Todos los bloques de `docs/CONTRATOS.md` con pruebas por bloque | **Completado** |
 | 9 | Guardado, carga y migraciones | `persistence/` + registro de migraciones + tests | **Completado** |
-| 10 | Español e inglés | Catálogos i18n `es`/`en`, selector de idioma, textos migrados a claves | Pendiente |
+| 10 | Español e inglés | Catálogos i18n `es`/`en`, selector de idioma, textos migrados a claves | **Completado** |
 | 11 | Pruebas funcionales, rendimiento, compatibilidad | Ejecución de Quality + tests completos | Pendiente |
 | 12 | Revisión de integración completa | Flujo end-to-end verificado (cámara -> bloque -> Sink -> UI) | Pendiente |
 | 13 | Documentación del sistema | Guías de instalación, uso, creación de bloques, formato, troubleshooting | Pendiente |

@@ -185,9 +185,10 @@ class BlurExecutor:
         kernel = int(params["kernel"])
         if kernel < 1 or kernel % 2 == 0:
             # Configuración inválida: kernel par rompería GaussianBlur.
+            # `detail` es una clave estable: el frontend la traduce con err.detail.*.
             raise EngineError(
                 ErrorCode.PARAM_INVALID,
-                {"detail": f"kernel debe ser impar y mayor o igual que 1: {kernel}"},
+                {"detail": "kernel_odd", "kernel": kernel},
             )
         blurred = cv2.GaussianBlur(inputs["in"].value, (kernel, kernel), float(params["sigma"]))
         return {"out": frame_value(blurred)}

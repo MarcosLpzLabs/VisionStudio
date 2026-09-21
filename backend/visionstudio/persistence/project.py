@@ -1,22 +1,28 @@
 """Persistencia de proyectos (formato JSON versionado).
 
-Formato v1 (docs/FORMATO_PROYECTO.md):
+Formato v2 (docs/FORMATO_PROYECTO.md):
 
 ```json
 {
-  "format_version": 1,
+  "format_version": 2,
   "name": "proyecto",
   "language": "es",
   "camera": {"index": 0, "width": 640, "height": 480},
   "flow": {"mode": "continuous", "interval_ms": 100},
-  "blocks": [{"id": "n1", "type": "block.camera", "x": 0, "y": 0, "params": {}}],
+  "blocks": [
+    {"id": "n1", "type": "block.camera", "x": 0, "y": 0, "width": null, "height": null, "params": {}}
+  ],
   "connections": [
     {"from": {"block": "n1", "port": "out"}, "to": {"block": "n2", "port": "in"}}
   ]
 }
 ```
 
-La versión actual es 1. Las migraciones entre versiones anteriores se
+Cambios de v1 a v2: cada bloque incorpora `width`/`height` (tamaño en el lienzo;
+`null` = automático). Los proyectos v1 se migran automáticamente al cargarlos
+(persistence/migrations.py), añadiendo esos campos como `null`.
+
+La versión actual es 2. Las migraciones entre versiones anteriores se
 encadenan automáticamente (persistence/migrations.py): si el archivo declara
 una versión menor, se migra hasta la actual antes de parsear. Un proyecto con
 versión MAYOR a la soportada se rechaza con ERR_PROJECT_VERSION_UNSUPPORTED.
@@ -35,7 +41,7 @@ from visionstudio.errors import EngineError
 from visionstudio.persistence.migrations import MIGRATIONS
 
 # Versión del formato de proyecto soportada por esta versión del backend.
-CURRENT_FORMAT_VERSION = 1
+CURRENT_FORMAT_VERSION = 2
 
 
 @dataclass
@@ -50,7 +56,7 @@ class ProjectMeta:
 
 
 def project_to_dict(graph: Graph, meta: ProjectMeta) -> dict[str, Any]:
-    """Serializa un grafo + metadatos al formato de proyecto v1."""
+    """Serializa un grafo + metadatos al formato de proyecto actual (v2)."""
     return {
         "format_version": CURRENT_FORMAT_VERSION,
         "name": meta.name,
@@ -63,6 +69,9 @@ def project_to_dict(graph: Graph, meta: ProjectMeta) -> dict[str, Any]:
                 "type": n.type,
                 "x": n.x,
                 "y": n.y,
+                # Tamaño en el lienzo (null = automático).
+                "width": n.width,
+                "height": n.height,
                 "params": n.params,
             }
             for n in graph.nodes
@@ -112,10 +121,14 @@ def project_from_dict(data: dict[str, Any], registry: BlockRegistry) -> tuple[Gr
             type=str(item["type"]),
             x=float(item.get("x", 0.0)),
             y=float(item.get("y", 0.0)),
+            # Tamaño opcional (formato v2); ausente o null -> automático.
+            width=_optional_float(item.get("width")),
+            height=_optional_float(item.get("height")),
             params=dict(item.get("params") or {}),
         )
         if graph.has_node(node.id):
-            raise EngineError(ErrorCode.BLOCK_NOT_FOUND, {"node_id": node.id, "detail": "id duplicado"})
+            # `detail` es una clave estable: el frontend la traduce con err.detail.*.
+            raise EngineError(ErrorCode.BLOCK_NOT_FOUND, {"node_id": node.id, "detail": "duplicate_id"})
         graph.add_node(node)
 
     # 4. Conexiones.
@@ -131,6 +144,16 @@ def project_from_dict(data: dict[str, Any], registry: BlockRegistry) -> tuple[Gr
         graph.add_edge(edge)
 
     return graph, meta
+
+
+def _optional_float(value: Any) -> Optional[float]:
+    """Convierte a float un tamaño opcional; None/ausente/inválido -> None."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _camera_config(data: Any) -> CameraConfig:

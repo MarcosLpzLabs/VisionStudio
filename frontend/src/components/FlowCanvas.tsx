@@ -24,28 +24,36 @@ import { BlockNode, type BlockNodeData } from './BlockNode'
 const nodeTypes = { block: BlockNode }
 
 function FlowCanvasInner() {
-  const { project, flowState, moveBlock, removeBlock, addConnection, removeConnection, addError, setSelectedNodeId, selectedNodeId } = useAppStore()
+  const { project, flowState, moveBlock, removeBlock, addConnection, removeConnection, addError, setSelectedNodeId, selectedNodeId, setSelectedEdgeId, selectedEdgeId } = useAppStore()
 
   const editable = flowState === 'stopped'
   const { screenToFlowPosition } = useReactFlow()
 
   // Proyecto -> nodos/aristas de React Flow (derivado, se recalcula al cambiar).
   // La selección es controlada desde el store para que el panel siempre refleje
-  // el nodo seleccionado (evita el desfase al reconstruir los nodos).
+  // el nodo seleccionado (evita el desfase al reconstruir los nodos) y para que
+  // las aristas seleccionadas se puedan borrar con Supr/Retroceso.
   const nodes: RfNode<BlockNodeData>[] = project.blocks.map((block) => ({
     id: block.id,
     type: 'block',
     position: { x: block.x, y: block.y },
     data: { blockType: block.type },
     selected: selectedNodeId === block.id,
+    // Tamaño persistido (null/undefined = automático).
+    width: block.width ?? undefined,
+    height: block.height ?? undefined,
   }))
-  const edges: RfEdge[] = project.connections.map((connection) => ({
-    id: connectionKey(connection),
-    source: connection.from.block,
-    sourceHandle: connection.from.port,
-    target: connection.to.block,
-    targetHandle: connection.to.port,
-  }))
+  const edges: RfEdge[] = project.connections.map((connection) => {
+    const id = connectionKey(connection)
+    return {
+      id,
+      source: connection.from.block,
+      sourceHandle: connection.from.port,
+      target: connection.to.block,
+      targetHandle: connection.to.port,
+      selected: selectedEdgeId === id,
+    }
+  })
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -69,10 +77,16 @@ function FlowCanvasInner() {
           const [fromBlock, fromPort] = from.split(':')
           const [toBlock, toPort] = to.split(':')
           removeConnection(fromBlock, fromPort, toBlock, toPort)
+        } else if (change.type === 'select' && change.selected) {
+          // La selección se controla desde el store: al hacer clic en una
+          // arista queda seleccionada y Supr/Retroceso la elimina. Los cambios
+          // de deselección se ignoran (los limpia onPaneClick/onNodeClick) para
+          // evitar que un orden desfavorable apague la selección recién hecha.
+          setSelectedEdgeId(change.id)
         }
       }
     },
-    [removeConnection],
+    [removeConnection, setSelectedEdgeId],
   )
 
   const onConnect = useCallback(
@@ -114,13 +128,24 @@ function FlowCanvasInner() {
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: RfNode) => {
       setSelectedNodeId(node.id)
+      // Un nodo y una arista no se seleccionan a la vez.
+      setSelectedEdgeId(null)
     },
-    [setSelectedNodeId],
+    [setSelectedNodeId, setSelectedEdgeId],
+  )
+
+  const onEdgeClick = useCallback(
+    (_event: React.MouseEvent, edge: RfEdge) => {
+      setSelectedEdgeId(edge.id)
+      setSelectedNodeId(null)
+    },
+    [setSelectedEdgeId, setSelectedNodeId],
   )
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
-  }, [setSelectedNodeId])
+    setSelectedEdgeId(null)
+  }, [setSelectedNodeId, setSelectedEdgeId])
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -150,6 +175,7 @@ function FlowCanvasInner() {
         onConnect={onConnect}
         isValidConnection={isValidConnection}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}

@@ -72,6 +72,10 @@ class ParamSpec(BaseModel):
     step: Optional[float] = None
     options: tuple[str, ...] = ()  # valores para type="select"
     required: bool = True
+    # Poka-yoke: si es True, el valor entero debe ser IMPAR (p. ej. el tamaño de
+    # núcleo de GaussianBlur, que OpenCV rechaza si es par). La UI fuerza
+    # impares y el registro rechaza el resto antes de ejecutar.
+    odd: bool = False
 
     @field_validator("options")
     @classmethod
@@ -274,9 +278,9 @@ BLOCK_BLUR = BlockSpec(
     inputs=(_in("in", "port.frame", (ValueType.FRAME,)),),
     outputs=(_out("out", "port.frame", (ValueType.FRAME,)),),
     params=(
-        # kernel debe ser impar (1, 3, 5...) para GaussianBlur; se valida en el
-        # ejecutor porque el rango solo no puede expresarlo.
-        _p("kernel", "param.kernel", type="number", kind="int", default=5, min=1, max=99),
+        # kernel debe ser impar (1, 3, 5...) para GaussianBlur; `odd=True` lo
+        # impone en la validación y la UI solo ofrece impares (poka-yoke).
+        _p("kernel", "param.kernel", type="number", kind="int", default=5, min=1, max=99, odd=True),
         _p("sigma", "param.sigma", type="number", kind="float", default=0.0, min=0.0),
     ),
     behavior="passthrough",

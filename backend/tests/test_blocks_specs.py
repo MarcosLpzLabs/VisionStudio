@@ -81,6 +81,8 @@ def test_block_blur():
     assert s.category == "processing"
     assert s.param("kernel").min == 1
     assert s.param("kernel").default == 5
+    # Poka-yoke: el núcleo solo admite impares (GaussianBlur rechaza pares).
+    assert s.param("kernel").odd is True
 
 
 def test_block_edge_detection():

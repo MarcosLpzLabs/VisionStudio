@@ -10,7 +10,7 @@ Identificadores de tipo: los del registro de bloques (block.camera, ...).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +22,11 @@ class Node(BaseModel):
     type: str  # tipo de bloque (id del registro, p. ej. "block.grayscale")
     x: float = 0.0  # posición en el lienzo (se guarda en el proyecto)
     y: float = 0.0
+    # Tamaño del bloque en el lienzo (formato v2). `None` = tamaño automático
+    # (lo decide el frontend a partir del contenido). El usuario puede
+    # redimensionarlo dentro de unos límites razonables.
+    width: Optional[float] = None
+    height: Optional[float] = None
     params: dict[str, Any] = Field(default_factory=dict)  # parámetros del usuario
 
 

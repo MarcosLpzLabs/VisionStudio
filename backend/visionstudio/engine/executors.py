@@ -82,7 +82,8 @@ class _Compare:
             result = self._OPS[op](value, reference)
         except KeyError:
             # Operador desconocido: fallo de configuración, no de datos.
-            raise EngineError(ErrorCode.PARAM_INVALID, {"detail": f"operador no soportado: {op}"})
+            # `detail` es una clave estable: el frontend la traduce con err.detail.*.
+            raise EngineError(ErrorCode.PARAM_INVALID, {"detail": "operator_unsupported", "op": op})
         return {"out": Value(ValueType.BOOLEAN, result)}
 
 
