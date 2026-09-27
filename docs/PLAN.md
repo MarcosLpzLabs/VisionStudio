@@ -25,7 +25,7 @@ Fuente: Prompt maestro
 | 8 | Resto de bloques MVP | Todos los bloques de `docs/CONTRATOS.md` con pruebas por bloque | **Completado** |
 | 9 | Guardado, carga y migraciones | `persistence/` + registro de migraciones + tests | **Completado** |
 | 10 | Español e inglés | Catálogos i18n `es`/`en`, selector de idioma, textos migrados a claves | **Completado** |
-| 11 | Pruebas funcionales, rendimiento, compatibilidad | Ejecución de Quality + tests completos | Pendiente |
+| 11 | Pruebas funcionales, rendimiento, compatibilidad | Ejecución de Quality + tests completos | **Completado** |
 | 12 | Revisión de integración completa | Flujo end-to-end verificado (cámara -> bloque -> Sink -> UI) | Pendiente |
 | 13 | Documentación del sistema | Guías de instalación, uso, creación de bloques, formato, troubleshooting | Pendiente |
 | 14 | Preparación multi-cámara, multi-Sink y YOLO | Contratos ampliados + bloques YOLO (Ultralytics) | Pendiente |

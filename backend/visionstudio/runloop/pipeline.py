@@ -12,6 +12,7 @@ El pipeline NO conoce el frontend: solo expone estado, control y resultados.
 
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 from visionstudio.blocks import BlockRegistry, registry as block_registry
@@ -20,6 +21,8 @@ from visionstudio.engine.executors_cv import full_executors
 from visionstudio.engine.graph import Graph
 from visionstudio.engine.runner import GraphRunner
 from visionstudio.runloop.runloop import RunLoop, RunMode, RunState
+
+logger = logging.getLogger(__name__)
 
 
 class GraphPipeline:
@@ -43,6 +46,9 @@ class GraphPipeline:
         # `on_results` recibe los resultados de cada pasada (sinks) para que la
         # API pueda difundirlos por WebSocket sin acoplar el pipeline al WS.
         self._on_results = on_results
+        # `on_error` se guarda para informar también de fallos de liberación en
+        # `close()` (la detención no debe fallar por un problema de hardware).
+        self._on_error = on_error
         self.runloop = RunLoop(
             self._step,
             mode=mode,
@@ -101,11 +107,19 @@ class GraphPipeline:
         """Detiene el flujo y libera todos los recursos (cámaras).
 
         Idempotente. Es el cierre que debe llamar la API al detener o al
-        apagar el servidor.
+        apagar el servidor. Un fallo al liberar un ejecutor NUNCA debe tumbar
+        la detención: se registra, se informa por `on_error` (si lo hay) y se
+        continúa liberando el resto (docs/CONTRATOS.md, ERR_CAMERA_RELEASE).
         """
         self.runloop.stop()
         for block_id in self.executors.implemented():
             executor = self.executors.get(block_id)
             close = getattr(executor, "close", None)
             if callable(close):
-                close()
+                try:
+                    close()
+                except Exception as exc:
+                    # Best-effort: se informa y se sigue con los demás ejecutores.
+                    logger.warning("fallo al liberar el ejecutor %s: %s", block_id, exc)
+                    if self._on_error is not None:
+                        self._on_error(exc)

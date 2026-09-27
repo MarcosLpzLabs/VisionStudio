@@ -77,6 +77,8 @@ Objetivo: ver tu cámara en la aplicación.
 Resultado: la imagen de tu cámara se muestra en tiempo real dentro del sink.
 Pulsa **Detener** para terminar.
 
+<img src="docs/images/ejemplo-uso/ejemplo-01-camara-sink.png" alt="Ejemplo 1: Cámara conectada al Sink de imagen mostrando el frame en vivo" width="820">
+
 ---
 
 ### Ejemplo 2 — Escala de grises
@@ -91,20 +93,28 @@ Objetivo: aplicar el primer filtro.
 Resultado: la imagen aparece en blanco y negro (la salida sigue siendo un
 `frame` de 3 canales, así que el sink no nota la diferencia).
 
+<img src="docs/images/ejemplo-uso/ejemplo-02-escala-grises.png" alt="Ejemplo 2: Cámara -> Escala de grises -> Sink de imagen" width="820">
+
 ---
 
 ### Ejemplo 3 — Blanco y negro / Umbral (binarización)
 
 Objetivo: convertir la imagen en dos tonos según un umbral.
 
-1. Monta `Cámara -> Escala de grises -> Sink`.
+1. Monta Cámara -> Escala de grises -> Blanco y Negro/Umbral -> Sink.
 2. Añade **Blanco y negro** entre grises y el sink. Selecciona el bloque y
    ajusta `Umbral` (127 por defecto).
 3. Ejecuta y mueve el umbral: cuanto más alto, más píxeles se apagan.
 
+<img src="docs/images/ejemplo-uso/ejemplo-03-blanco-negro.png" alt="Ejemplo 3: Cámara -> Escala de grises -> Blanco y negro -> Sink" width="820">
+
 Variante: usa **Umbral** (Procesamiento) en lugar de *Blanco y negro* y prueba
 los distintos modos (`THRESH_BINARY`, `THRESH_BINARY_INV`, `THRESH_TRUNC`,
 `THRESH_TOZERO`): el modo invertido "negativa" la binarización.
+
+<img src="docs/images/ejemplo-uso/ejemplo-03-variante-umbral-1.png" alt="Ejemplo 3 (variante): Umbral en modo THRESH_BINARY_INV" width="820">
+
+<img src="docs/images/ejemplo-uso/ejemplo-03-variante-umbral-2.png" alt="Ejemplo 3 (variante): Umbral en modo THRESH_TOZERO" width="820">
 
 ---
 
@@ -112,7 +122,7 @@ los distintos modos (`THRESH_BINARY`, `THRESH_BINARY_INV`, `THRESH_TRUNC`,
 
 Objetivo: suavizar la imagen.
 
-1. Monta `Cámara -> Escala de grises -> Sink`.
+1. Monta Cámara -> Escala de grises → DESENFOQUE -> Sink.
 2. Inserta **Desenfoque** entre grises y el sink.
 3. Selecciona el bloque: `Tamaño de núcleo` (kernel) debe ser impar (1, 3, 5...)
    — un valor par se rechaza con error. `Sigma` 0 deja que OpenCV calcule la
@@ -122,20 +132,23 @@ Objetivo: suavizar la imagen.
 Resultado: la imagen se ve "desenfocada". Este filtro es la preparación
 habitual antes de detectar bordes.
 
+<img src="docs/images/ejemplo-uso/ejemplo-04-desenfoque.png" alt="Ejemplo 4: Cámara -> Escala de grises -> Desenfoque -> Sink" width="820">
+
 ---
 
 ### Ejemplo 5 — Detección de bordes (Canny)
 
 Objetivo: ver solo los contornos de la escena.
 
-1. Monta `Cámara -> Escala de grises -> Sink`.
-2. Sustituye el sink por esta cadena: `... -> Desenfoque -> Detección de bordes -> Sink`.
-3. Selecciona **Detección de bordes** y ajusta `Umbral bajo` (100) y `Umbral
+1. Monta Cámara -> Escala de grises -> Desenfoque -> Detección de bordes -> Sink.
+2. Selecciona **Detección de bordes** y ajusta `Umbral bajo` (100) y `Umbral
    alto` (200).
-4. Ejecuta.
+3. Ejecuta.
 
 Resultado: la imagen se reduce a las líneas de los bordes (blanco sobre negro).
 Con el desenfoque previo el resultado es más limpio (menos ruido).
+
+<img src="docs/images/ejemplo-uso/ejemplo-05-bordes.png" alt="Ejemplo 5: Detección de bordes con Canny tras el desenfoque" width="820">
 
 ---
 
@@ -143,16 +156,15 @@ Con el desenfoque previo el resultado es más limpio (menos ruido).
 
 Objetivo: detectar objetos y dibujarlos en verde.
 
-1. Monta `Cámara -> Escala de grises -> Umbral -> Sink` (ejemplo 3).
-2. Sustituye el sink por **Contornos** y conecta su salida `frame` a un
-   **Sink de imagen**:
-   `Cámara -> Escala de grises -> Umbral -> Contornos -> Sink`.
-3. Selecciona **Contornos**: `Modo de contornos` (RETR_EXTERNAL encuentra los
+1. Monta Cámara -> Escala de grises -> Umbral -> Contornos -> Sink.
+2. Selecciona **Contornos**: `Modo de contornos` (RETR_EXTERNAL encuentra los
    contornos exteriores) y `Área mínima` (descarta los objetos pequeños/ruido).
-4. Ejecuta y muestra un objeto frente a la cámara.
+3. Ejecuta y muestra un objeto frente a la cámara.
 
 Resultado: el contorno de cada objeto se dibuja en verde sobre la imagen. La
 salida `detections` del bloque queda lista para futuros bloques de análisis.
+
+<img src="docs/images/ejemplo-uso/ejemplo-06-contornos.png" alt="Ejemplo 6: Contornos dibujados en verde sobre la imagen" width="820">
 
 ---
 
@@ -167,7 +179,9 @@ Objetivo: rotular el frame con texto.
 4. Ejecuta.
 
 Resultado: el texto aparece dibujado sobre el frame en la posición indicada.
-Ideal para etiquetar o sobreimpresionar información.
+Ideal para etiquetar o sobreimprimir información.
+
+<img src="docs/images/ejemplo-uso/ejemplo-07-texto.png" alt="Ejemplo 7: Texto sobreimpreso en el frame" width="820">
 
 ---
 
@@ -185,6 +199,8 @@ Resultado: el sink booleano muestra `true`, porque 7 >= 5. Cambia la referencia
 a 10 y volverá a mostrar `false`. El `num`/`bool` junto a los puertos te indica
 los tipos que conectas.
 
+<img src="docs/images/ejemplo-uso/ejemplo-08-comparacion.png" alt="Ejemplo 8: Valor numérico -> Comparación -> Sink booleano (true)" width="820">
+
 ---
 
 ### Ejemplo 9 — Indicador OK/NOK
@@ -199,6 +215,8 @@ Objetivo: convertir un booleano en un indicador de calidad.
 Resultado: el indicador se pinta verde (OK) o rojo (NOK) según el resultado de
 la comparación. Este es el patrón básico de control de calidad: medir un valor,
 compararlo con una referencia y mostrar si pasa o no.
+
+<img src="docs/images/ejemplo-uso/ejemplo-09-ok-nok.png" alt="Ejemplo 9: Indicador de estado en verde (OK)" width="820">
 
 ---
 
@@ -218,6 +236,8 @@ Objetivo: un flujo completo con control de cadencia y persistencia.
 
 Resultado: un flujo de visión completo (captura temporizada + procesamiento +
 detección + visualización) guardable y reutilizable.
+
+<img src="docs/images/ejemplo-uso/ejemplo-10-combinado.png" alt="Ejemplo 10: Flujo combinado con Temporizador, Contornos y Sink de imagen" width="820">
 
 ---
 
